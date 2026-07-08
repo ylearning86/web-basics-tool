@@ -301,7 +301,7 @@
         'Connection: keep-alive\n';
       appendOutput(2, host + '（' + ip[0] + '）に送るリクエスト',
         '<pre>' + esc(reqText) + '</pre>' +
-        '<p class="note">ブラウザはこの文面を ' + esc(ip[0]) + ':' + esc(port) + ' に送っています。</p>');
+        '<p class="note">ブラウザはこの文面を ' + esc(ip[0]) + ':' + esc(port) + ' に送っています。</p>', 'ok');
       setStepState(2, 'done');
 
       // ---- ステップ4：HTTP レスポンス受信（まず本物を試す）----
@@ -346,7 +346,7 @@
         '<iframe id="' + frameId + '" title="preview"></iframe>' +
         '</div>' +
         '<p class="note">埋め込み表示をブロックするサイトでは白いままになります。その場合は ' +
-        '<a class="link" href="' + esc(url.href) + '" target="_blank" rel="noopener">新しいタブで開く</a> と見られます。</p>');
+        '<a class="link" href="' + esc(url.href) + '" target="_blank" rel="noopener">新しいタブで開く</a> と見られます。</p>', 'ok');
       // iframe の src はプロパティ経由で設定（安全のため）
       const frame = document.getElementById(frameId);
       if (frame) frame.src = url.href;
