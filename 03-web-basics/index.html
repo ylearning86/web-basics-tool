@@ -62,51 +62,42 @@
     button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* --- 横並びパイプライン（左→右に流れる） --- */
-    .pipeline {
-      display: flex;
-      align-items: stretch;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 6px;
-      margin-bottom: 20px;
-    }
+    /* --- 2カラム --- */
+    .main { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+    @media (max-width: 760px) { .main { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card); border-radius: 14px; padding: 18px; }
+    .card h2 { font-size: 1rem; margin: 0 0 14px; color: var(--accent); }
+
+    /* --- 左：流れ --- */
+    .steps { display: grid; gap: 10px; }
     .step {
-      flex: 1 1 0;
-      min-width: 128px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 34px 1fr;
       align-items: center;
-      gap: 5px;
-      padding: 14px 8px;
-      border-radius: 12px;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: 10px;
       border: 1px solid var(--line);
       background: var(--panel);
       opacity: 0.4;
       cursor: pointer;
       transition: opacity 0.3s, border-color 0.3s, transform 0.2s;
     }
-    .step.active { opacity: 1; border-color: var(--accent); transform: translateY(-3px); }
+    .step.active { opacity: 1; border-color: var(--accent); transform: translateX(3px); }
     .step.done { opacity: 1; border-color: var(--ok); }
     .step .num {
-      width: 32px; height: 32px; border-radius: 50%;
+      width: 30px; height: 30px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       background: var(--line); font-weight: bold; font-size: 0.9rem;
     }
     .step.active .num { background: var(--accent); color: #05202b; }
     .step.done .num { background: var(--ok); color: #05202b; }
-    .step .title { font-weight: bold; font-size: 0.85rem; }
-    .step .desc { color: var(--muted); font-size: 0.72rem; line-height: 1.3; }
-    .arrow {
-      display: flex; align-items: center; justify-content: center;
-      color: var(--muted); font-size: 1.3rem; flex: 0 0 auto;
-    }
+    .step .title { font-weight: bold; font-size: 0.9rem; }
+    .step .desc { color: var(--muted); font-size: 0.75rem; }
 
-    /* --- 出力（全幅） --- */
-    .card { background: var(--card); border-radius: 14px; padding: 18px; }
-    .card h2 { font-size: 1rem; margin: 0 0 14px; color: var(--accent); }
-    .output { min-height: 240px; }
+    /* --- 右：出力 --- */
+    .output { min-height: 320px; }
     .out-card {
       border-radius: 10px;
       background: var(--panel);
@@ -141,14 +132,14 @@
     .browser .bar { background: #e2e8f0; padding: 6px 10px; display: flex; gap: 6px; align-items: center; }
     .browser .dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
     .browser .addr { flex: 1; background: #fff; border-radius: 999px; padding: 3px 10px; font-size: 0.72rem; color: #334155; }
-    .browser iframe { width: 100%; height: 300px; border: 0; background: #fff; display: block; }
+    .browser iframe { width: 100%; height: 260px; border: 0; background: #fff; display: block; }
     a.link { color: var(--accent); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Web のしくみ</h1>
-    <p class="lead">好きな URL を入れて「実行」を押すと、名前解決 → リクエスト → レスポンス → 表示の流れが左から右に進みます。</p>
+    <p class="lead">好きな URL を入れて「実行」を押すと、名前解決 → リクエスト → レスポンス → 表示の流れを順に見られます。</p>
 
     <div class="urlbar">
       <input id="url" type="text" value="https://example.com" aria-label="URL" />
@@ -156,44 +147,41 @@
       <button id="reset" class="ghost">リセット</button>
     </div>
 
-    <!-- 横並びの流れ（左→右） -->
-    <div class="pipeline" id="steps">
-      <div class="step" data-step="0">
-        <div class="num">1</div>
-        <div class="title">URL を解釈</div>
-        <div class="desc">どこに・どうやって<br>接続するか読み取る</div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="step" data-step="1">
-        <div class="num">2</div>
-        <div class="title">DNS で名前解決</div>
-        <div class="desc">ホスト名<br>→ IP アドレス</div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="step" data-step="2">
-        <div class="num">3</div>
-        <div class="title">リクエスト送信</div>
-        <div class="desc">その IP に<br>「ください」</div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="step" data-step="3">
-        <div class="num">4</div>
-        <div class="title">レスポンス受信</div>
-        <div class="desc">ステータス＋<br>本文が返る</div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="step" data-step="4">
-        <div class="num">5</div>
-        <div class="title">画面を表示</div>
-        <div class="desc">HTML を解析<br>して描画</div>
-      </div>
-    </div>
+    <div class="main">
+      <!-- 左：流れ -->
+      <section class="card">
+        <h2>流れ</h2>
+        <div class="steps" id="steps">
+          <div class="step" data-step="0">
+            <div class="num">1</div>
+            <div><div class="title">URL を解釈</div><div class="desc">どこに・どうやって接続するか読み取る</div></div>
+          </div>
+          <div class="step" data-step="1">
+            <div class="num">2</div>
+            <div><div class="title">DNS で名前解決</div><div class="desc">ホスト名 → IP アドレス</div></div>
+          </div>
+          <div class="step" data-step="2">
+            <div class="num">3</div>
+            <div><div class="title">HTTP リクエスト送信</div><div class="desc">その IP に「ください」とお願い</div></div>
+          </div>
+          <div class="step" data-step="3">
+            <div class="num">4</div>
+            <div><div class="title">HTTP レスポンス受信</div><div class="desc">ステータス＋本文が返る</div></div>
+          </div>
+          <div class="step" data-step="4">
+            <div class="num">5</div>
+            <div><div class="title">画面を表示</div><div class="desc">HTML を解析して描画</div></div>
+          </div>
+        </div>
+        <p class="note">各ステップをクリックすると、その出力をもう一度表示します。</p>
+      </section>
 
-    <!-- 出力（全幅） -->
-    <section class="card output">
-      <h2>出力結果</h2>
-      <div id="output"><p class="placeholder">「実行」を押すと、ここに各ステップの結果が順に表示されます。上の各ステップをクリックすると個別に再表示できます。</p></div>
-    </section>
+      <!-- 右：出力 -->
+      <section class="card output">
+        <h2>出力結果</h2>
+        <div id="output"><p class="placeholder">「実行」を押すと、ここに各ステップの結果が表示されます。</p></div>
+      </section>
+    </div>
   </div>
 
   <script>
@@ -316,19 +304,35 @@
         '<p class="note">ブラウザはこの文面を ' + esc(ip[0]) + ':' + esc(port) + ' に送っています。</p>');
       setStepState(2, 'done');
 
-      // ---- ステップ4：HTTP レスポンス受信 ----
+      // ---- ステップ4：HTTP レスポンス受信（まず本物を試す）----
       setStepState(3, 'active');
       await wait(400);
-      const resText =
-        'HTTP/1.1 200 OK\n' +
-        'Content-Type: text/html; charset=UTF-8\n' +
-        'Content-Length: 1256\n' +
-        'Date: ' + new Date().toUTCString() + '\n' +
-        '\n' +
-        '<!DOCTYPE html><html>...（HTML 本文）...</html>';
-      appendOutput(3, 'サーバーからのレスポンス',
-        '<pre>' + esc(resText) + '</pre>' +
-        '<p class="note">※ ブラウザのセキュリティ（CORS）により、他サイトの中身を JavaScript から直接読むことはできません。実際のステータスやヘッダーは DevTools の Network タブで確認できます。上は代表的な例です。</p>');
+      let real = null;
+      try {
+        const r = await fetch(url.href, { method: 'GET' }); // CORS 許可サイトなら status/headers が読める
+        const headers = [];
+        r.headers.forEach((v, k) => headers.push(k + ': ' + v));
+        real = { status: r.status, statusText: r.statusText, headers };
+      } catch { /* CORS でブロック or ネットワークエラー → 下で代表例 */ }
+
+      if (real) {
+        let head = 'HTTP/1.1 ' + real.status + ' ' + real.statusText + '\n' + real.headers.join('\n');
+        appendOutput(3, 'サーバーからの本物のレスポンス',
+          '<pre>' + esc(head) + '</pre>' +
+          '<p class="note">このサイトは CORS を許可しているため、実際のステータスとヘッダーを表示できました。' +
+          '（本文やすべてのヘッダーはブラウザのセキュリティ上、一部しか読めない場合があります）</p>', 'ok');
+      } else {
+        const resText =
+          'HTTP/1.1 200 OK\n' +
+          'Content-Type: text/html; charset=UTF-8\n' +
+          'Content-Length: 1256\n' +
+          'Date: ' + new Date().toUTCString() + '\n' +
+          '\n' +
+          '<!DOCTYPE html><html>...（HTML 本文）...</html>';
+        appendOutput(3, 'サーバーからのレスポンス（代表例）',
+          '<pre>' + esc(resText) + '</pre>' +
+          '<p class="note">※ このサイトは CORS を許可していないため、JavaScript から中身を読めませんでした。上は代表的な例です。実際のステータスやヘッダーは DevTools の Network タブで確認できます。</p>');
+      }
       setStepState(3, 'done');
 
       // ---- ステップ5：画面を表示 ----
@@ -358,7 +362,7 @@
       if (running) return;
       stepEls.forEach((_, i) => setStepState(i, null));
       Object.keys(results).forEach((k) => delete results[k]);
-      outputEl.innerHTML = '<p class="placeholder">「実行」を押すと、ここに各ステップの結果が順に表示されます。上の各ステップをクリックすると個別に再表示できます。</p>';
+      outputEl.innerHTML = '<p class="placeholder">「実行」を押すと、ここに各ステップの結果が表示されます。</p>';
     });
   </script>
 </body>
