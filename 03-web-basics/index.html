@@ -286,7 +286,7 @@
           '<div class="k">ホスト名</div><div class="v">' + esc(host) + '</div>' +
           '<div class="k">IP アドレス</div><div class="v">' + esc(ip[0]) + '（例）</div>' +
           '</div>' +
-          '<p class="note">本物の問い合わせに失敗したため、例のIPを表示しています。</p>');
+          '<p class="note">本物の問い合わせに失敗したため、例のIPを表示しています。</p>', 'ok');
       }
       setStepState(1, 'done');
 
@@ -331,7 +331,7 @@
           '<!DOCTYPE html><html>...（HTML 本文）...</html>';
         appendOutput(3, 'サーバーからのレスポンス（代表例）',
           '<pre>' + esc(resText) + '</pre>' +
-          '<p class="note">※ このサイトは CORS を許可していないため、JavaScript から中身を読めませんでした。上は代表的な例です。実際のステータスやヘッダーは DevTools の Network タブで確認できます。</p>');
+          '<p class="note">※ このサイトは CORS を許可していないため、JavaScript から中身を読めませんでした。上は代表的な例です。実際のステータスやヘッダーは DevTools の Network タブで確認できます。</p>', 'ok');
       }
       setStepState(3, 'done');
 
