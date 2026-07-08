@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URL を打ってから画面が出るまで／HTTP ステータスコード体験</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --err: #f87171;
+      --line: #334155;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .wrap { width: 100%; max-width: 820px; }
+
+    h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    h2 { font-size: 1.15rem; margin: 0 0 12px; color: var(--accent); }
+    p.lead { color: var(--muted); margin-top: 0; }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    /* --- URL バー --- */
+    .urlbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .urlbar input {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    button {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #05202b;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    button:hover { filter: brightness(1.1); }
+    button.ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    /* --- ステップ表示 --- */
+    .steps { display: grid; gap: 10px; }
+    .step {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      opacity: 0.35;
+      transition: opacity 0.3s, border-color 0.3s, transform 0.3s;
+    }
+    .step.active {
+      opacity: 1;
+      border-color: var(--accent);
+      transform: translateX(4px);
+    }
+    .step.done { opacity: 1; border-color: var(--ok); }
+    .step .num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--line);
+      font-weight: bold;
+    }
+    .step.active .num { background: var(--accent); color: #05202b; }
+    .step.done .num { background: var(--ok); color: #05202b; }
+    .step .title { font-weight: bold; }
+    .step .desc { color: var(--muted); font-size: 0.85rem; }
+
+    /* --- ステータスコード --- */
+    .codes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .codes button { background: #0b1220; color: var(--text); border: 1px solid var(--line); }
+    .codes button:hover { border-color: var(--accent); }
+
+    .response {
+      border-radius: 10px;
+      padding: 16px;
+      background: #0b1220;
+      border-left: 6px solid var(--line);
+      min-height: 72px;
+    }
+    .response.ok   { border-left-color: var(--ok); }
+    .response.warn { border-left-color: var(--warn); }
+    .response.err  { border-left-color: var(--err); }
+    .response .code { font-size: 1.4rem; font-weight: bold; }
+    .response .msg { color: var(--muted); margin-top: 6px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .badge.ok   { background: rgba(74,222,128,.15); color: var(--ok); }
+    .badge.warn { background: rgba(251,191,36,.15); color: var(--warn); }
+    .badge.err  { background: rgba(248,113,113,.15); color: var(--err); }
+
+    .hint { color: var(--muted); font-size: 0.85rem; margin-top: 10px; }
+    code { background: #0b1220; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>ブラウザの裏側をのぞいてみよう</h1>
+    <p class="lead">URL を打ってから画面が出るまでの流れと、HTTP ステータスコードを体験できます。</p>
+
+    <!-- ① URL → 画面 の流れ -->
+    <section class="card">
+      <h2>① URL を打ってから画面が出るまで</h2>
+      <div class="urlbar">
+        <input id="url" type="text" value="https://example.com" aria-label="URL" />
+        <button id="go">アクセス</button>
+      </div>
+      <div class="steps" id="steps">
+        <div class="step" data-step="0">
+          <div class="num">1</div>
+          <div>
+            <div class="title">URL を解釈</div>
+            <div class="desc">ブラウザが「どこに・どうやって」接続するか読み取る</div>
+          </div>
+        </div>
+        <div class="step" data-step="1">
+          <div class="num">2</div>
+          <div>
+            <div class="title">DNS に問い合わせ</div>
+            <div class="desc">example.com の IP アドレスは？ → 93.184.216.34</div>
+          </div>
+        </div>
+        <div class="step" data-step="2">
+          <div class="num">3</div>
+          <div>
+            <div class="title">HTTP リクエストを送る</div>
+            <div class="desc">その IP に「このページください」とお願いする</div>
+          </div>
+        </div>
+        <div class="step" data-step="3">
+          <div class="num">4</div>
+          <div>
+            <div class="title">HTTP レスポンスが返る</div>
+            <div class="desc">200 OK ＋ HTML 本文が返ってくる</div>
+          </div>
+        </div>
+        <div class="step" data-step="4">
+          <div class="num">5</div>
+          <div>
+            <div class="title">DOM を組み立てる</div>
+            <div class="desc">HTML を読んで木構造のデータにする</div>
+          </div>
+        </div>
+        <div class="step" data-step="5">
+          <div class="num">6</div>
+          <div>
+            <div class="title">画面に描画（レンダリング）</div>
+            <div class="desc">CSS を当てて JS を動かし、ピクセルにする</div>
+          </div>
+        </div>
+      </div>
+      <p class="hint">「アクセス」を押すと、上から順に光っていきます。DevTools の Network タブを開いた状態で押すと、実際の通信と見比べられます。</p>
+    </section>
+
+    <!-- ② ステータスコード -->
+    <section class="card">
+      <h2>② HTTP ステータスコードを体験</h2>
+      <p class="lead">ボタンを押すと、サーバーからの「返事」が表示されます。</p>
+      <div class="codes">
+        <button data-code="200">200 を試す</button>
+        <button data-code="301">301 を試す</button>
+        <button data-code="404">404 を試す</button>
+        <button data-code="500">500 を試す</button>
+      </div>
+      <div class="response" id="response">
+        <div class="msg">上のボタンを押してみてください。</div>
+      </div>
+      <p class="hint">
+        本物のステータスコードを見たいときは、ブラウザで
+        <code>https://http.cat/404</code> のように開くと猫の画像で返ってきます。
+      </p>
+    </section>
+  </div>
+
+  <script>
+    // --- ① URL → 画面 の流れ アニメーション ---
+    const steps = Array.from(document.querySelectorAll('.step'));
+    const goBtn = document.getElementById('go');
+    let running = false;
+
+    function resetSteps() {
+      steps.forEach(s => s.classList.remove('active', 'done'));
+    }
+
+    async function runFlow() {
+      if (running) return;
+      running = true;
+      resetSteps();
+      for (const step of steps) {
+        step.classList.add('active');
+        // 各ステップを 600ms 光らせてから「完了」にする
+        await new Promise(r => setTimeout(r, 600));
+        step.classList.remove('active');
+        step.classList.add('done');
+      }
+      running = false;
+    }
+
+    goBtn.addEventListener('click', runFlow);
+
+    // --- ② ステータスコード ---
+    const RESPONSES = {
+      200: { level: 'ok',   label: 'OK',                    msg: '成功。「はい、どうぞ」とページが返ってきた状態です。' },
+      301: { level: 'warn', label: 'Moved Permanently',     msg: 'リダイレクト。「あちらに移ってください」と別の URL へ案内されます。' },
+      404: { level: 'err',  label: 'Not Found',             msg: '見つからない。「そんなページはありません」。URL の打ち間違いでよく出ます。' },
+      500: { level: 'err',  label: 'Internal Server Error', msg: 'サーバー側のエラー。「こっちでバグりました」。あなたのせいではありません。' },
+    };
+    const badgeText = { ok: '成功', warn: 'リダイレクト', err: 'エラー' };
+
+    const responseEl = document.getElementById('response');
+    document.querySelectorAll('.codes button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const code = btn.dataset.code;
+        const r = RESPONSES[code];
+        responseEl.className = 'response ' + r.level;
+        responseEl.innerHTML =
+          '<div class="code">' + code + ' ' + r.label +
+          '<span class="badge ' + r.level + '">' + badgeText[r.level] + '</span></div>' +
+          '<div class="msg">' + r.msg + '</div>';
+      });
+    });
+  </script>
+</body>
+</html>
